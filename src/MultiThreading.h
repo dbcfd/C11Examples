@@ -12,7 +12,7 @@ public:
 
     void run();
     void runWithValue(int value);
-    void runWithPromise(int value, std::promise<int> promise);
+    void runWithPromise(int value, std::promise<int>* promise);
     void incrementValue();
     int sleepThenIncrement();
 

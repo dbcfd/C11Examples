@@ -116,7 +116,7 @@ TEST(EXAMPLES_TEST, TEST_FUTURE)
         std::promise<int> promise;
         std::future<int> result = promise.get_future();
 
-        auto thread = std::thread(&Runnable::runWithPromise, &runner, 5, promise);
+        auto thread = std::thread(&Runnable::runWithPromise, &runner, 5, &promise);
 
         result.wait();
 
@@ -141,7 +141,7 @@ TEST(EXAMPLES_TEST, TEST_FUTURE)
     {
         Runnable runner;
 
-        std::packaged_task<int()> task( [&runner] () { runner.sleepThenIncrement(); } );
+        std::packaged_task<int()> task( [&runner] () -> int { return runner.sleepThenIncrement(); } );
         auto result = task.get_future();
         auto thread = std::thread(std::move(task));
 

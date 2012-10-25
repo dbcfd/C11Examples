@@ -17,10 +17,10 @@ void Runnable::runWithValue(int value)
     mValue = value;
 }
 
-void Runnable::runWithPromise(int value, std::promise<int> promise)
+void Runnable::runWithPromise(int value, std::promise<int>* promise)
 {
     mValue = value;
-    promise.set_value(value);
+    promise->set_value(value);
 }
 
 void Runnable::incrementValue()
