@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-Runnable::Runnable() : mHasRun(false), mValue(0)
+Runnable::Runnable() : mHasRun(false), mValue(0), mShouldIncrement(false)
 {
 
 }
@@ -14,28 +14,46 @@ void Runnable::run()
 
 void Runnable::runWithValue(int value)
 {
-    run();
     mValue = value;
+    run();
 }
 
 void Runnable::runWithPromise(int value, std::promise<int>* promise)
 {
-    run();
     mValue = value;
+    run();
     promise->set_value(value);
+}
+
+void Runnable::conditionRun(std::mutex* m)
+{
+    std::unique_lock<std::mutex> lock(*m);
+    //boolean prevens spurious wake ups
+    while(!mShouldIncrement)
+    {
+        mWaiter.wait(lock);
+    }
+    mShouldIncrement = false;
+    ++mValue;
+
+    while(!mShouldIncrement)
+    {
+        mWaiter.wait(lock);
+    }
+    ++mValue;
 }
 
 void Runnable::incrementValue()
 {
-    run();
     ++mValue;
+    run();
 }
  
 int Runnable::sleepThenIncrement()
 {
-    run();
-    std::chrono::seconds dur(5);
+    std::chrono::seconds dur(1);
     std::this_thread::sleep_for(dur);
     ++mValue;
+    run();
     return mValue;
 }

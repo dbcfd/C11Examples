@@ -51,7 +51,7 @@ void example_bind() {
 
 void example_lambda() 
 {
-    //lambdas are anonymouse functions (they are defined inline without a name/identifier)
+    //lambdas are anonymous functions (they are defined inline without a name/identifier)
     //they can take parameters from outside their scope, arguments, and return values
 
     //here, we're defining a lambda which doesn't use parameters from outside the scope (empty capture []),
@@ -74,7 +74,7 @@ void example_lambda()
     bool anotherReturnValue = lfObj2(4);
     //at this point, result is true
 
-    //when we capture by reference, we cannot modify the values (unless we use mutable) but we
+    //when we capture by value, we cannot modify the values (unless we use mutable) but we
     //can read their values and use them within the lambda logic
     result = false;
     std::function<bool(int)> lfObj3 = [=](int x) -> bool { return (result == false);};
@@ -142,7 +142,7 @@ void example_thread()
         //we are wrapping the function in a lambda since std::call_once required a void() function
         std::function<void()> func = [&] () { runner.incrementValue(); };
         //use call_once to prevent multiple calls. We are using capture all by reference [&] to grab the 
-        //oncee_flag and pass it to call_one
+        //once_flag and pass it to call_one
         std::function<void()> callOnce = [&] () { std::call_once(flag, func); };
         //invoke multiple threads attempting to call our function
         auto thread1 = std::thread(callOnce);
@@ -155,7 +155,7 @@ void example_thread()
         thread3.join();
 
         //only one increment should have occurred, taking us from 0 to 1
-        bool returnShouldBe1 = runner.value();
+        int returnShouldBe1 = runner.value();
     }
 }
 
@@ -167,8 +167,8 @@ void example_future()
         Runnable runner;
 
         //promises and futures are used to define some action that will return a result at some point in 
-        //the future. A promise is often defined, and the result passed to the promise is determined
-        //in another thread. A thread can then wait (block) on the result of the promise, usually
+        //the future. A promise is defined, and the result passed to the promise is determined
+        //in another thread. A thread can then wait (block) on the result of the promise (as held in the future), usually
         //after it has performed some work of its own
         //here we define a promise, and get the future that results from that promise
         std::promise<int> promise;
@@ -229,6 +229,48 @@ void example_future()
         //task has completed, value has been incremented
         int runnerHasValue1 = runner.value();
     }
+}
+
+void example_condition_variable() {
+    //Runnable is defined in MultiThreading.h. It provides a number of methods that can be called which
+    //perform some behavior. It does not inherit from any special classes.
+    Runnable runner;
+
+    //Runner has a condition variable that it will use to wait on a resource to become available, in this
+    //case a boolean which tells it to increment
+    std::condition_variable& waiter = runner.getWaiter();
+
+    std::thread thread;
+
+    //condition variables use a mutex to know when a resource is available
+    std::mutex m;
+    {
+        //lock the mutex
+        std::unique_lock<std::mutex> lock(m);
+        thread = std::thread(&Runnable::conditionRun, &runner, &m);
+        //let our thread have time to start
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        //at this point, conditionRun is waiting on the mutex and the resource (boolean flag)
+        int valueShouldBe0 = runner.value();
+        //set our resource
+        runner.shouldIncrement();
+        //notify runner that resource is ready
+        waiter.notify_one();
+    }
+
+    {
+        //acquire the lock again, forcing runner to wait on the resource
+        std::unique_lock<std::mutex> lock(m);
+        int valueShouldBe1 = runner.value();
+        //set the resource
+        runner.shouldIncrement();
+        //notify the runner
+        waiter.notify_one();
+    }
+
+    thread.join();
+
+    int valueShouldBe2 = runner.value();
 }
 
 int main(int argv, char **argc) {

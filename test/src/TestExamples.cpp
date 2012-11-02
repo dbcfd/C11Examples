@@ -123,6 +123,8 @@ TEST(EXAMPLES_TEST, TEST_FUTURE)
         ASSERT_EQ(5, runner.value());
         ASSERT_EQ(runner.value(), result.get());
         ASSERT_TRUE(runner.hasRun());
+
+        thread.join();
     }
 
     {
@@ -151,6 +153,37 @@ TEST(EXAMPLES_TEST, TEST_FUTURE)
 
         ASSERT_EQ(1, result.get());
         ASSERT_EQ(1, runner.value());
-        ASSERT_FALSE(thread.joinable());
+        
+        thread.join();
     }
+}
+
+TEST(EXAMPLES_TEST, TEST_CONDITION_VARIABLE)
+{
+    Runnable runner;
+    std::condition_variable& waiter = runner.getWaiter();
+
+    std::thread thread;
+
+    std::mutex m;
+    {
+        std::unique_lock<std::mutex> lock(m);
+        thread = std::thread(&Runnable::conditionRun, &runner, &m);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        ASSERT_EQ(0, runner.value());
+        runner.shouldIncrement();
+        waiter.notify_one();
+    }
+
+    {
+        std::unique_lock<std::mutex> lock(m);
+        ASSERT_EQ(1, runner.value());
+        runner.shouldIncrement();
+        waiter.notify_one();
+    }
+
+    thread.join();
+
+    ASSERT_EQ(2, runner.value());
+
 }
