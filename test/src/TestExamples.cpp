@@ -52,7 +52,7 @@ TEST(EXAMPLES_TEST, TEST_LAMBDA)
     std::function<bool(int)> lfObj3 = [=](int x) -> bool { return (result == false);};
     result = true;
 
-    ASSERT_FALSE(lfObj3(0));
+    ASSERT_TRUE(lfObj3(0));
 
     std::vector<int> values;
     values.push_back(1);
@@ -122,7 +122,7 @@ TEST(EXAMPLES_TEST, TEST_FUTURE)
 
         ASSERT_EQ(5, runner.value());
         ASSERT_EQ(runner.value(), result.get());
-        ASSERT_FALSE(thread.joinable());
+        ASSERT_TRUE(runner.hasRun());
     }
 
     {
