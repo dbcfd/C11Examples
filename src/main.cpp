@@ -335,6 +335,74 @@ void example_task()
     //all our tasks are completed at this point
 }
 
+//http://msdn.microsoft.com/en-us/library/dd492427.aspx
+
+#include <ppltasks.h>
+void example_vs_task()
+{
+    //need to share our data with the lambda to make sure it sticks around
+    std::shared_ptr<std::string> s(new std::string("This is a test string"));
+    //concurrency::create_task utilizes lambdas to return a future that will
+    //hold our value
+    auto myTask = concurrency::create_task([s] {
+        std::string ret;
+        if(!s->empty())
+        {
+            ret.append(s->begin(), s->end());
+            std::string stuff("STUFF IN THE MIDDLE");
+            size_t mid = ret.size() / 2;
+            ret.insert(ret.begin() + mid, stuff.begin(), stuff.end());
+        }
+        return ret;
+    //the vs concurrency library also supports continuation tasks to chain actions
+    }).then([](std::string modStr) {
+        if(modStr.size() > 2)
+        {
+            modStr.erase(modStr.begin(), modStr.begin() + 2);
+        }
+        return modStr;
+    });
+
+    //now, we just need to wait for all of that to complete
+    myTask.wait();
+
+    //get the resultant string
+    std::string result = myTask.get();
+}
+
+//http://msdn.microsoft.com/en-us/library/dd470426.aspx
+
+#include <ppl.h>
+#include <concurrent_vector.h>
+
+void example_vs_parallel()
+{
+    concurrency::concurrent_vector<std::string> v1(10);
+    concurrency::concurrent_vector<std::string> v2(10);
+
+    concurrency::parallel_for(0, 5, [&v1, &v2](int value) {
+        switch(value)
+        {
+        case 0:
+            v1.push_back("This is the string from case 0");
+        case 1:
+            v2.push_back("Meanwhile case 1 had this string");
+            break;
+        case 2:
+            v1.push_back("And case 2 was this");
+            break;
+        case 3:
+            v2.push_back("Putting something in for case 3");
+        case 4:
+            v1.push_back("Can't forget about case 4");
+            break;
+        default:
+            v1.push_back("Default? But I know my cases! Oh wait, who forgot 5?");
+            break;
+        }
+    } );
+}
+
 int main(int argv, char **argc) {
 
 	return 0;
