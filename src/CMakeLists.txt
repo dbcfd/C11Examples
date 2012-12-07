@@ -1,8 +1,8 @@
 set (TARGET ExamplesLib)
 add_definitions(-DEXAMPLES_LIB_BUILD)
 
-set(HEADERS FunctionalProgramming.h Platform.h MultiThreading.h)
-set(SOURCES FunctionalProgramming.cpp MultiThreading.cpp)
+set(HEADERS FunctionalProgramming.h Platform.h MultiThreading.h Task.h Worker.h Manager.h)
+set(SOURCES FunctionalProgramming.cpp MultiThreading.cpp Task.cpp Worker.cpp Manager.cpp)
 
 add_library (${TARGET} SHARED ${HEADERS} ${SOURCES}) 
 target_link_libraries (${TARGET} ${DEPENDENCIES})

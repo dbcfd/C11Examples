@@ -1,5 +1,7 @@
 #include "FunctionalProgramming.h"
 #include "MultiThreading.h"
+#include "Manager.h"
+#include "Task.h"
 
 #include <algorithm>
 #include <vector>
@@ -271,6 +273,66 @@ void example_condition_variable() {
     thread.join();
 
     int valueShouldBe2 = runner.value();
+}
+
+//define a task to run
+class ExampleTask : public workers::Task
+{
+public:
+    ExampleTask() : wasPerformed(false)
+    {
+
+    }
+
+    virtual ~ExampleTask()
+    {
+
+    }
+    
+    bool wasPerformed;
+
+private:
+    virtual void performSpecific()
+    {
+        wasPerformed = true;
+    }
+
+};
+
+void example_task()
+{
+    //here, we're creating a bunch of tasks that we want to run, using the previously defined
+    //example task class
+    std::vector< std::shared_ptr<workers::Task> > tasks;
+    for(size_t i = 0; i < 5; ++i) 
+    {
+        ExampleTask* task = new ExampleTask();
+        tasks.push_back(std::shared_ptr<workers::Task>(task));
+    }
+
+    //we will now create a manager that has only two workers, so it can handle only two tasks at a time
+    workers::Manager manager(2);
+
+    //run all our tasks
+    for(std::vector< std::shared_ptr<workers::Task> >::const_iterator task = tasks.begin(); task != tasks.end(); ++task)
+    {
+        manager.run((*task));
+    }
+
+    bool tasksCompleted = true;
+
+    //check that all of our tasks ran
+    for(std::vector< std::shared_ptr<workers::Task> >::const_iterator task = tasks.begin(); task != tasks.end(); ++task)
+    {
+        //wait till task is done
+        std::future<bool> taskFuture = (*task)->getCompletionFuture();
+        taskFuture.wait();
+
+        //get the result of the task
+        tasksCompleted &= taskFuture.get();
+    }
+
+    //all our tasks are completed at this point
 }
 
 int main(int argv, char **argc) {
