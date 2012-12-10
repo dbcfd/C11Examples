@@ -25,9 +25,10 @@ public:
     bool wasPerformed;
 
 private:
-    virtual void performSpecific()
+    virtual bool performSpecific()
     {
         wasPerformed = true;
+        return wasPerformed;
     }
 
 };

@@ -14,7 +14,30 @@ Manager::Manager(const size_t nbWorkers) : mShutdown(false)
     for(size_t workerIdx = 0; workerIdx < nbWorkers; ++workerIdx)
     {
         Worker* worker = new Worker([this](Worker* worker) -> void {
-            workerDone(worker);
+            //grab the next task if available, otherwise add our worker to a wait list
+            if(!this->isShutdown())
+            {
+                std::shared_ptr<Task> task;
+                {
+                    std::unique_lock<std::mutex> lock(mMutex);
+
+                    if(this->mTasks.empty())
+                    {
+                        this->mAvailableWorkers.push(worker);
+                    }
+                    else
+                    {
+                        //task available, run it
+                        task.swap(mTasks.front());
+                        this->mTasks.pop();
+                        this->mTasksRemovedSignal.notify_all();
+                    }
+                }
+                if(0 != task)
+                {
+                    worker->runTask(task);
+                }
+            }
         } );
         mWorkers.push_back(worker);
         mAvailableWorkers.push(worker);
@@ -64,35 +87,6 @@ void Manager::shutdown()
 }
 
 //------------------------------------------------------------------------------
-void Manager::workerDone(Worker* worker)
-{
-    //grab the next task if available, otherwise add our worker to a wait list
-    if(!isShutdown())
-    {
-        std::shared_ptr<Task> task;
-        {
-            std::unique_lock<std::mutex> lock(mMutex);
-
-            if(mTasks.empty())
-            {
-                mAvailableWorkers.push(worker);
-            }
-            else
-            {
-                //task available, run it
-                task.swap(mTasks.front());
-                mTasks.pop();
-                mTasksRemovedSignal.notify_all();
-            }
-        }
-        if(0 != task)
-        {
-            worker->runTask(task);
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
 void Manager::waitForTasksToComplete()
 {
     std::unique_lock<std::mutex> lock(mMutex);
@@ -131,7 +125,7 @@ void Manager::run(std::shared_ptr<Task> task)
     }
     else if(task != 0)
     {
-        task->failToPerform();
+        task->setCompletionStatus(false);
     }
 }
 

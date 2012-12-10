@@ -292,15 +292,19 @@ public:
     bool wasPerformed;
 
 private:
-    virtual void performSpecific()
+    virtual bool performSpecific()
     {
         wasPerformed = true;
+        return wasPerformed;
     }
 
 };
 
 void example_task()
 {
+    //we will now create a manager that has only two workers, so it can handle only two tasks at a time
+    workers::Manager manager(2);
+
     //here, we're creating a bunch of tasks that we want to run, using the previously defined
     //example task class
     std::vector< std::shared_ptr<workers::Task> > tasks;
@@ -309,9 +313,6 @@ void example_task()
         ExampleTask* task = new ExampleTask();
         tasks.push_back(std::shared_ptr<workers::Task>(task));
     }
-
-    //we will now create a manager that has only two workers, so it can handle only two tasks at a time
-    workers::Manager manager(2);
 
     //run all our tasks
     for(std::vector< std::shared_ptr<workers::Task> >::const_iterator task = tasks.begin(); task != tasks.end(); ++task)

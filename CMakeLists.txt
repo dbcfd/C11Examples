@@ -4,6 +4,8 @@ project(C11Examples)
 
 set(version 0.1.0)
 
+option(BUILD_TESTS "BUILD_TESTS" ON)
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -30,5 +32,7 @@ set(THIRDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
 add_subdirectory(thirdparty)
 
-set(gtest_VERSION 1.6.0)
-add_subdirectory(test)
+IF(BUILD_TESTS)
+	set(gtest_VERSION 1.6.0)
+	add_subdirectory(test)
+ENDIF()

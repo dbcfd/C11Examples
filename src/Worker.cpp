@@ -34,7 +34,7 @@ void Worker::shutdown()
 
     if(0 != mRunningTask)
     {
-        mRunningTask->failToPerform();
+        mRunningTask->setCompletionStatus(false);
     }
 }
 
@@ -54,14 +54,8 @@ void Worker::runTask(std::shared_ptr<Task> task)
     }
     else if(task != 0)
     {
-        task->failToPerform();
+        task->setCompletionStatus(false);
     }
-}
-
-//------------------------------------------------------------------------------
-void Worker::completeTask()
-{
-    mTaskCompleteFunction(this);
 }
 
 //------------------------------------------------------------------------------
@@ -86,7 +80,7 @@ void Worker::run()
 
         if(taskToRun != 0)
         {
-            taskToRun->perform([this]()->void { completeTask(); });
+            taskToRun->perform([this]()->void { this->mTaskCompleteFunction(this); });
         }
     }
 }

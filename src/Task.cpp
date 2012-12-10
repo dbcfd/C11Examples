@@ -11,28 +11,28 @@ Task::Task()
 //------------------------------------------------------------------------------
 Task::~Task()
 {
-    try {
-        //attempt to fail the task, which sets the future to false
-        failToPerform();
+    try
+    {
+        setCompletionStatus(false);
     }
     catch(std::future_error&)
     {
-        //task was successfully performed already, so we can't set value to false
+        //task was already completed by perform
     }
 }
 
 //------------------------------------------------------------------------------
-void Task::failToPerform()
+void Task::setCompletionStatus(const bool status)
 {
-    mTaskCompletePromise.set_value(false);
+    mTaskCompletePromise.set_value(status);
 }
 
 //------------------------------------------------------------------------------
 void Task::perform(std::function<void(void)> completeFunction)
 {
-    performSpecific();
+    bool result = performSpecific();
     completeFunction();
-    mTaskCompletePromise.set_value(true);
+    setCompletionStatus(result);
 }
 
 }
